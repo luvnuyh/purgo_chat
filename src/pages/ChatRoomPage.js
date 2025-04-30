@@ -1,12 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { io } from "socket.io-client";
 import { useNickname } from "../context/NicknameContext";
 import { useNavigate } from "react-router-dom";
 
-// 욕설 감지 함수 (API 연동 또는 자체 구현 예정)
+// 욕설 감지 함수 (KoBERT API 연동)
 const detectBadWords = async (message) => {
     try {
-        const response = await fetch("http://localhost:5000", {
+        const response = await fetch("http://13.125.55.220:5000/analyze", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -15,15 +14,27 @@ const detectBadWords = async (message) => {
         });
 
         const data = await response.json();
-        return data.badWordCount || 0;
+
+        return {
+            isBad: data.final_decision === 1,
+            rewrittenText: data.result.rewritten_text,
+            confidence: data.kobert.confidence,
+            detectedWords: data.fasttext.detected_words,
+        };
     } catch (error) {
         console.error("API 호출 중 오류 발생:", error);
-        return 0;
+        return {
+            isBad: false,
+            rewrittenText: message,
+            confidence: 0,
+            detectedWords: [],
+        };
     }
 };
 
 const ChatPage = () => {
     const socketRef = useRef(null);
+    const chatEndRef = useRef(null); // 자동 스크롤 참조
     const { nickname } = useNickname();
     const navigate = useNavigate();
 
@@ -36,56 +47,73 @@ const ChatPage = () => {
     useEffect(() => {
         if (!nickname) {
             alert("닉네임이 없습니다. 다시 입장해 주세요.");
-            navigate("/");
+            navigate("/");  // 닉네임이 없으면 홈으로 리디렉션
             return;
         }
 
-        socketRef.current = io("http://localhost:8080");
+        // 웹소켓 연결
+        socketRef.current = new WebSocket("ws://localhost:8081/api/chat");  // 서버의 웹소켓 URL
 
-        socketRef.current.emit("join", nickname);
+        socketRef.current.onopen = () => {
+            console.log("웹소켓 연결됨");
+            // 입장 메시지 전송
+            socketRef.current.send(
+                JSON.stringify({ type: "ENTER", sender: nickname })
+            );
+        };
 
-        socketRef.current.on("participants", (list) => {
-            setParticipants(list);
-        });
+        socketRef.current.onmessage = (event) => {
+            const data = JSON.parse(event.data);
 
-        socketRef.current.on("chat message", (data) => {
-            setMessages((prev) => [...prev, data]);
-        });
+            if (data.type === "participants") {
+                setParticipants(data.participants);
+            } else if (data.type === "chat message") {
+                setMessages((prev) => [...prev, data]);
+            }
+        };
+
+        socketRef.current.onclose = () => {
+            console.log("웹소켓 연결 종료");
+        };
 
         return () => {
-            socketRef.current.disconnect();
+            socketRef.current.close();
         };
-    }, [nickname]);
+    }, [nickname, navigate]);
 
-    const sendMessage = () => {
+    useEffect(() => {
+        // 메시지 업데이트 시 스크롤 아래로 이동
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
+
+    const sendMessage = async () => {
         if (input.trim()) {
             const time = new Date().toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
             });
 
+            const messageToCheck = input;
+            setInput("");
+
+            const result = await detectBadWords(messageToCheck);
+
+            const finalMessage = result.isBad
+                ? result.rewrittenText
+                : messageToCheck;
+
             const messageData = {
-                senderName: nickname,
-                message: input,
+                type: "TALK",
+                sender: nickname,
+                content: finalMessage,
                 time,
             };
 
-            socketRef.current.emit("chat message", messageData);
+            socketRef.current.send(JSON.stringify(messageData));
 
-            // 입력창 즉시 초기화
-            const messageToCheck = input;  // 클로저로 복사
-            setInput("");
-
-            // 욕설 감지는 따로 비동기 처리
-            detectBadWords(messageToCheck)
-                .then((detected) => {
-                    if (detected > 0) {
-                        setBadWordCount((prev) => prev + detected);
-                    }
-                })
-                .catch((error) => {
-                    console.error("욕설 감지 중 오류:", error);
-                });
+            if (result.isBad) {
+                setBadWordCount((prev) => prev + 1);
+            }
         }
     };
 
@@ -129,28 +157,26 @@ const ChatPage = () => {
                     <div
                         key={idx}
                         className={`flex ${
-                            msg.senderName === nickname
-                                ? "justify-end"
-                                : "justify-start"
+                            msg.sender === nickname ? "justify-end" : "justify-start"
                         }`}
                     >
                         <div
                             className={`max-w-xs p-2 rounded-lg shadow ${
-                                msg.senderName === nickname
+                                msg.sender === nickname
                                     ? "bg-green-300 text-black"
                                     : "bg-gray-300 text-black"
                             }`}
                         >
-                            <div className="text-sm font-semibold">
-                                {msg.senderName}
-                            </div>
-                            <div>{msg.message}</div>
+                            <div className="text-sm font-semibold">{msg.sender}</div>
+                            <div>{msg.content}</div>
                             <div className="text-xs text-gray-600 text-right">
                                 {msg.time}
                             </div>
                         </div>
                     </div>
                 ))}
+                {/* 채팅 끝 지점 ref */}
+                <div ref={chatEndRef} />
             </div>
 
             {/* Input */}

@@ -1,15 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNickname } from "../context/NicknameContext";
-import { io } from "socket.io-client";  // 소켓 클라이언트 라이브러리
 
 const NicknameForm = () => {
     const [input, setInput] = useState("");
     const { setNickname } = useNickname();
     const navigate = useNavigate();
-    const socket = io("http://localhost:8080");  // 서버 URL (8080 포트 사용)
 
-    // ❌ socket 관련 코드 전부 삭제
     const handleSubmit = (e) => {
         e.preventDefault();
 
