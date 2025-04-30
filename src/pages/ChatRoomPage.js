@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 // 욕설 감지 함수 (KoBERT API 연동)
 const detectBadWords = async (message) => {
     try {
-        const response = await fetch("http://13.125.55.220:5000/analyze", {
+        const response = await fetch("http://???:5000/analyze", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -52,7 +52,7 @@ const ChatPage = () => {
         }
 
         // 웹소켓 연결
-        socketRef.current = new WebSocket("ws://localhost:8081/api/chat");  // 서버의 웹소켓 URL
+        socketRef.current = new WebSocket("ws://localhost:8081/ws/chat");  // 서버의 웹소켓 URL
 
         socketRef.current.onopen = () => {
             console.log("웹소켓 연결됨");

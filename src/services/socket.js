@@ -9,7 +9,7 @@ export const useSocket = (nickname, onMessageReceived) => {
 
     useEffect(() => {
         // 서버 주소에 맞게 수정 (웹소켓 서버 URL)
-        socket = io("ws://localhost:8080/ws/chat");
+        socket = io("ws://localhost:8081/ws/chat");
 
         // 메시지가 수신되었을 때
         socket.on("message", async (message) => {
