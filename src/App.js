@@ -1,25 +1,35 @@
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import NicknamePage from "./pages/NicknamePage";
+import ChatRoomPage from "./pages/ChatRoomPage";
+import { NicknameProvider, useNickname } from "./context/NicknameContext";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
+const ProtectedRoute = ({ children }) => {
+    const { nickname } = useNickname();
+    if (!nickname) {
+        return <Navigate to="/" />;
+    }
+    return children;
+};
+
+const App = () => {
+    return (
+        <NicknameProvider>
+            <Router>
+                <Routes>
+                    <Route path="/" element={<NicknamePage />} />
+                    <Route
+                        path="/chat"
+                        element={
+                            <ProtectedRoute>
+                                <ChatRoomPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                </Routes>
+            </Router>
+        </NicknameProvider>
+    );
+};
 
 export default App;
