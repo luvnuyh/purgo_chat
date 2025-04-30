@@ -9,7 +9,7 @@ export const useSocket = (nickname, onMessageReceived) => {
 
     useEffect(() => {
         // 서버 주소에 맞게 수정 (웹소켓 서버 URL)
-        socket = io("http://localhost:8081");
+        socket = io("ws://localhost:8080/ws/chat");
 
         // 메시지가 수신되었을 때
         socket.on("message", async (message) => {
@@ -40,7 +40,7 @@ export const useSocket = (nickname, onMessageReceived) => {
     // 욕설 감지 함수 (서버 API 호출)
     const detectBadWords = async (message) => {
         try {
-            const response = await fetch("http://13.125.55.220:5000/analyze", {
+            const response = await fetch("http://:5000/analyze", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
