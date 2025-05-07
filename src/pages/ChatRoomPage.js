@@ -34,7 +34,7 @@ const ChatPage = () => {
         socketRef.current.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
-            const { type, sender, content, time } = data;
+            const { type, sender, time } = data;
 
             if (type === "ENTER") {
                 // 참여자 추가
@@ -52,9 +52,9 @@ const ChatPage = () => {
             } else if (type === "TALK") {
                 setMessages(prev => [...prev, data]);
 
-                // 욕설 카운트 예시 (단순 필터링, 필요 시 확장 가능)
-                if (data.content.includes("욕")) {
-                    setBadWordCount(prev => prev + 1);
+                // 서버에서 badWordCount 전달 시 업데이트
+                if (typeof data.badWordCount === "number") {
+                    setBadWordCount(data.badWordCount);
                 }
 
                 // 대화 참여자 자동 업데이트
