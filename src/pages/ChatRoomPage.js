@@ -52,9 +52,9 @@ const ChatPage = () => {
             } else if (type === "TALK") {
                 setMessages(prev => [...prev, data]);
 
-                // 욕설 카운트 예시 (단순 필터링, 필요 시 확장 가능)
-                if (data.content.includes("욕")) {
-                    setBadWordCount(prev => prev + 1);
+                // 서버에서 badWordCount 전달 시 업데이트
+                if (typeof data.badWordCount === "number") {
+                    setBadWordCount(data.badWordCount);
                 }
 
                 // 대화 참여자 자동 업데이트
