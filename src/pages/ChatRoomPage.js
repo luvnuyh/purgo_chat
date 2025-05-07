@@ -34,7 +34,7 @@ const ChatPage = () => {
         socketRef.current.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
-            const { type, sender, content, time } = data;
+            const { type, sender, time } = data;
 
             if (type === "ENTER") {
                 // 참여자 추가
