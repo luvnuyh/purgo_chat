@@ -143,7 +143,7 @@ const ChatPage = () => {
                                     : "justify-start"
                         }`}
                     >
-                        <div
+                        <div0
                             className={`max-w-xs p-2 rounded-lg shadow ${
                                 msg.sender === nickname
                                     ? "bg-green-300 text-black"
@@ -161,7 +161,7 @@ const ChatPage = () => {
                                     {msg.time}
                                 </div>
                             )}
-                        </div>
+                        </div0>
                     </div>
                 ))}
                 <div ref={chatEndRef} />
