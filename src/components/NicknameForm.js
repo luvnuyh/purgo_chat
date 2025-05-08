@@ -10,12 +10,15 @@ const NicknameForm = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        if (input.trim()) {
-            setNickname(input.trim());         // Context에 저장
-            navigate("/chat");                 // ChatPage에서 socket 연결하게 함
+        const trimmed = input.trim();
+        if (!trimmed) {
+            alert("닉네임을 입력하세요.");
+            return;
         }
-    };
 
+        setNickname(trimmed);
+        navigate("/chat");
+    };
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col items-center mt-20">

@@ -8,11 +8,30 @@ const ChatPage = () => {
     const { nickname } = useNickname();
     const navigate = useNavigate();
 
-    const [participants, setParticipants] = useState([]);
-    const [messages, setMessages] = useState([]);
-    const [input, setInput] = useState("");
-    const [badWordCount, setBadWordCount] = useState(0);
-    const [showParticipants, setShowParticipants] = useState(false);
+    const [participants, setParticipants] = useState([]); // 참여자 목록
+    const [messages, setMessages] = useState([]); // 메시지 목록
+    const [input, setInput] = useState(""); // 입력값
+    const [badWordCount, setBadWordCount] = useState(0); // 욕설 횟수
+    const [showParticipants, setShowParticipants] = useState(false); // 참여자 목록 표시 여부
+
+    // ✅ 초기 참여자 목록을 서버에서 받아옵니다.
+    useEffect(() => {
+        const fetchParticipants = async () => {
+            try {
+                const response = await fetch("http://localhost:8081/api/chat/participants");
+                if (response.ok) {
+                    const data = await response.json();
+                    setParticipants(data);
+                } else {
+                    console.error("참여자 목록 요청 실패");
+                }
+            } catch (error) {
+                console.error("참여자 목록 요청 중 에러:", error);
+            }
+        };
+
+        fetchParticipants();
+    }, []);
 
     // ✅ 욕설 횟수 초기 로딩
     useEffect(() => {
@@ -20,8 +39,8 @@ const ChatPage = () => {
             try {
                 const response = await fetch("http://localhost:8081/api/chat/count");
                 if (response.ok) {
-                    const data = await response.json();
-                    setBadWordCount(data.count);
+                    const data = await response.json(); // data는 숫자임
+                    setBadWordCount(data); // 그대로 사용하면 됨
                 } else {
                     console.error("욕설 횟수 요청 실패");
                 }
@@ -35,7 +54,7 @@ const ChatPage = () => {
 
     useEffect(() => {
         if (!nickname) {
-            alert("닉네임이 없습니다. 다시 입장해 주세요.");
+            alert("닉네임이 없습니다. 닉네임 입력후 입장해 주세요.");
             navigate("/");
             return;
         }
@@ -54,9 +73,14 @@ const ChatPage = () => {
             const { type, sender, time } = data;
 
             if (type === "ENTER") {
-                setParticipants(prev =>
-                    !prev.includes(sender) ? [...prev, sender] : prev
-                );
+                setParticipants((prev) => {
+                    // 입장한 사용자가 이미 참여자 목록에 있다면 추가하지 않음
+                    if (!prev.includes(sender)) {
+                        return [...prev, sender];
+                    }
+                    return prev;
+                });
+
                 setMessages(prev => [...prev, {
                     sender: "system",
                     content: `${sender}님이 입장하셨습니다.`,
@@ -72,10 +96,12 @@ const ChatPage = () => {
             } else if (type === "TALK") {
                 setMessages(prev => [...prev, data]);
 
+                // 욕설 횟수 업데이트
                 if (typeof data.badWordCount === "number") {
                     setBadWordCount(data.badWordCount);
                 }
 
+                // 입장한 사용자가 참여자 목록에 없다면 추가
                 setParticipants(prev =>
                     !prev.includes(sender) ? [...prev, sender] : prev
                 );
