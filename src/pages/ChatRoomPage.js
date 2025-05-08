@@ -14,25 +14,6 @@ const ChatPage = () => {
     const [badWordCount, setBadWordCount] = useState(0); // 욕설 횟수
     const [showParticipants, setShowParticipants] = useState(false); // 참여자 목록 표시 여부
 
-    // ✅ 초기 참여자 목록을 서버에서 받아옵니다.
-    useEffect(() => {
-        const fetchParticipants = async () => {
-            try {
-                const response = await fetch("http://localhost:8081/api/chat/participants");
-                if (response.ok) {
-                    const data = await response.json();
-                    setParticipants(data);
-                } else {
-                    console.error("참여자 목록 요청 실패");
-                }
-            } catch (error) {
-                console.error("참여자 목록 요청 중 에러:", error);
-            }
-        };
-
-        fetchParticipants();
-    }, []);
-
     // ✅ 욕설 횟수 초기 로딩
     useEffect(() => {
         const fetchBadWordCount = async () => {
@@ -40,6 +21,7 @@ const ChatPage = () => {
                 const response = await fetch("http://localhost:8081/api/chat/count");
                 if (response.ok) {
                     const data = await response.json(); // data는 숫자임
+                    console.log("욕설 횟수:", data);
                     setBadWordCount(data); // 그대로 사용하면 됨
                 } else {
                     console.error("욕설 횟수 요청 실패");
@@ -105,6 +87,9 @@ const ChatPage = () => {
                 setParticipants(prev =>
                     !prev.includes(sender) ? [...prev, sender] : prev
                 );
+            } else if (type === "PARTICIPANT_LIST") {
+                // 서버로부터 참여자 목록 받기
+                setParticipants(data);
             }
         };
 
