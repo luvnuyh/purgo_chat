@@ -16,9 +16,11 @@ const NicknameForm = () => {
             return;
         }
 
+        localStorage.setItem("nickname", trimmed); // ✅ 로컬 스토리지 저장
         setNickname(trimmed);
         navigate("/chat");
     };
+
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col items-center mt-20">
