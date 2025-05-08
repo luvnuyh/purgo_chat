@@ -14,6 +14,25 @@ const ChatPage = () => {
     const [badWordCount, setBadWordCount] = useState(0);
     const [showParticipants, setShowParticipants] = useState(false);
 
+    // ✅ 욕설 횟수 초기 로딩
+    useEffect(() => {
+        const fetchBadWordCount = async () => {
+            try {
+                const response = await fetch("http://localhost:8081/api/chat/count");
+                if (response.ok) {
+                    const data = await response.json();
+                    setBadWordCount(data.count);
+                } else {
+                    console.error("욕설 횟수 요청 실패");
+                }
+            } catch (error) {
+                console.error("욕설 횟수 요청 중 에러:", error);
+            }
+        };
+
+        fetchBadWordCount();
+    }, []);
+
     useEffect(() => {
         if (!nickname) {
             alert("닉네임이 없습니다. 다시 입장해 주세요.");
@@ -30,40 +49,36 @@ const ChatPage = () => {
             );
         };
 
-        // 🔁 수정된 부분: 메시지 타입에 따라 분기 처리
         socketRef.current.onmessage = (event) => {
             const data = JSON.parse(event.data);
-
             const { type, sender, time } = data;
 
             if (type === "ENTER") {
-                // 참여자 추가
-                setParticipants(prev => {
-                    if (!prev.includes(sender)) {
-                        return [...prev, sender];
-                    }
-                    return prev;
-                });
-                setMessages(prev => [...prev, { sender: "system", content: `${sender}님이 입장하셨습니다.`, time }]);
+                setParticipants(prev =>
+                    !prev.includes(sender) ? [...prev, sender] : prev
+                );
+                setMessages(prev => [...prev, {
+                    sender: "system",
+                    content: `${sender}님이 입장하셨습니다.`,
+                    time,
+                }]);
             } else if (type === "LEAVE") {
-                // 참여자 제거
                 setParticipants(prev => prev.filter(p => p !== sender));
-                setMessages(prev => [...prev, { sender: "system", content: `${sender}님이 퇴장하셨습니다.`, time }]);
+                setMessages(prev => [...prev, {
+                    sender: "system",
+                    content: `${sender}님이 퇴장하셨습니다.`,
+                    time,
+                }]);
             } else if (type === "TALK") {
                 setMessages(prev => [...prev, data]);
 
-                // 서버에서 badWordCount 전달 시 업데이트
                 if (typeof data.badWordCount === "number") {
                     setBadWordCount(data.badWordCount);
                 }
 
-                // 대화 참여자 자동 업데이트
-                setParticipants(prev => {
-                    if (!prev.includes(sender)) {
-                        return [...prev, sender];
-                    }
-                    return prev;
-                });
+                setParticipants(prev =>
+                    !prev.includes(sender) ? [...prev, sender] : prev
+                );
             }
         };
 
@@ -143,7 +158,7 @@ const ChatPage = () => {
                                     : "justify-start"
                         }`}
                     >
-                        <div0
+                        <div
                             className={`max-w-xs p-2 rounded-lg shadow ${
                                 msg.sender === nickname
                                     ? "bg-green-300 text-black"
@@ -161,7 +176,7 @@ const ChatPage = () => {
                                     {msg.time}
                                 </div>
                             )}
-                        </div0>
+                        </div>
                     </div>
                 ))}
                 <div ref={chatEndRef} />
