@@ -1,17 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 const NicknameContext = createContext();
 
 export const NicknameProvider = ({ children }) => {
-    const [nickname, setNicknameState] = useState(() => {
-        return localStorage.getItem("nickname") || "";
-    });
-
-    // 닉네임 설정 시 localStorage에도 저장
-    const setNickname = (name) => {
-        localStorage.setItem("nickname", name);
-        setNicknameState(name);
-    };
+    const [nickname, setNickname] = useState("");
 
     return (
         <NicknameContext.Provider value={{ nickname, setNickname }}>

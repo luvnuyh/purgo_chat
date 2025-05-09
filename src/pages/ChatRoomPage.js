@@ -8,21 +8,21 @@ const ChatPage = () => {
     const { nickname } = useNickname();
     const navigate = useNavigate();
 
-    const [participants, setParticipants] = useState([]); // 참여자 목록
-    const [messages, setMessages] = useState([]); // 메시지 목록
-    const [input, setInput] = useState(""); // 입력값
-    const [badWordCount, setBadWordCount] = useState(0); // 욕설 횟수
-    const [showParticipants, setShowParticipants] = useState(false); // 참여자 목록 표시 여부
+    const [participants, setParticipants] = useState([]);
+    const [messages, setMessages] = useState([]);
+    const [input, setInput] = useState("");
+    const [badWordCount, setBadWordCount] = useState(0);
+    const [showParticipants, setShowParticipants] = useState(false);
 
-    // ✅ 욕설 횟수 초기 로딩
+    // 욕설 횟수 초기 로딩
     useEffect(() => {
         const fetchBadWordCount = async () => {
             try {
                 const response = await fetch("http://localhost:8081/api/chat/count");
                 if (response.ok) {
-                    const data = await response.json(); // data는 숫자임
+                    const data = await response.json();
                     console.log("욕설 횟수:", data);
-                    setBadWordCount(data); // 그대로 사용하면 됨
+                    setBadWordCount(data);
                 } else {
                     console.error("욕설 횟수 요청 실패");
                 }
@@ -55,41 +55,37 @@ const ChatPage = () => {
             const { type, sender, time } = data;
 
             if (type === "ENTER") {
-                setParticipants((prev) => {
-                    // 입장한 사용자가 이미 참여자 목록에 있다면 추가하지 않음
-                    if (!prev.includes(sender)) {
-                        return [...prev, sender];
-                    }
-                    return prev;
-                });
-
-                setMessages(prev => [...prev, {
-                    sender: "system",
-                    content: `${sender}님이 입장하셨습니다.`,
-                    time,
-                }]);
+                setParticipants((prev) =>
+                    !prev.includes(sender) ? [...prev, sender] : prev
+                );
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        sender: "system",
+                        content: `${sender}님이 입장하셨습니다.`,
+                        time,
+                    },
+                ]);
             } else if (type === "LEAVE") {
-                setParticipants(prev => prev.filter(p => p !== sender));
-                setMessages(prev => [...prev, {
-                    sender: "system",
-                    content: `${sender}님이 퇴장하셨습니다.`,
-                    time,
-                }]);
+                setParticipants((prev) => prev.filter((p) => p !== sender));
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        sender: "system",
+                        content: `${sender}님이 퇴장하셨습니다.`,
+                        time,
+                    },
+                ]);
             } else if (type === "TALK") {
-                setMessages(prev => [...prev, data]);
+                setMessages((prev) => [...prev, data]);
 
-                // 욕설 횟수 업데이트
                 if (typeof data.badWordCount === "number") {
                     setBadWordCount(data.badWordCount);
                 }
 
-                // 입장한 사용자가 참여자 목록에 없다면 추가
-                setParticipants(prev =>
+                setParticipants((prev) =>
                     !prev.includes(sender) ? [...prev, sender] : prev
                 );
-            } else if (type === "PARTICIPANT_LIST") {
-                // 서버로부터 참여자 목록 받기
-                setParticipants(data);
             }
         };
 
